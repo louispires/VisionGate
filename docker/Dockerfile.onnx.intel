@@ -1,0 +1,58 @@
+# Lightweight ONNX Runtime (Intel GPU preferred) Gate Classification API
+# Strategy: Use OpenVINO dev image and work with its virtual environment
+
+FROM openvino/ubuntu24_runtime:2025.3.0
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+
+# The OpenVINO image uses a virtual environment at /opt/venv
+# We need to ensure we have proper permissions and use the correct Python
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Switch to root to install packages, then switch back
+USER root
+
+# Install intel_gpu_top for GPU monitoring
+RUN apt-get update && \
+    apt-get install -y intel-gpu-tools && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Fix virtual environment permissions
+RUN chown -R openvino:openvino /opt/venv
+
+# Switch to openvino user (the default user in the image)
+USER openvino
+
+# Upgrade pip using the virtual environment
+RUN python -m pip install --upgrade pip
+
+# Install ONNX Runtime w/ OpenVINO EP + FastAPI stack
+RUN pip install --no-cache-dir onnxruntime-openvino fastapi uvicorn Pillow numpy python-multipart setproctitle
+
+# Copy model & server (as root to ensure proper ownership)
+USER root
+COPY gate_mobilenetv3.onnx ./
+COPY gate_mobilenetv3.onnx.data ./
+COPY server_mobilenetv3_onnx.py ./
+RUN chown -R openvino:openvino /app
+
+# Switch back to openvino user for runtime
+USER openvino
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request,sys,json;\
+import contextlib;\
+url='http://localhost:8000/health';\
+try:\
+  with urllib.request.urlopen(url,timeout=4) as r: d=json.loads(r.read().decode());\
+  sys.exit(0 if d.get('status')=='healthy' else 1)\
+except Exception: sys.exit(1)" || exit 1
+
+CMD ["python", "server_mobilenetv3_onnx.py"]

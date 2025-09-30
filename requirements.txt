@@ -1,0 +1,38 @@
+# Core dependencies for image processing and data handling
+Pillow>=9.0.0
+numpy>=1.21.0
+opencv-python>=4.8.0
+
+# FastAPI server dependencies
+fastapi>=0.100.0
+uvicorn>=0.23.0
+python-multipart>=0.0.6
+
+# Process monitoring and naming
+setproctitle>=1.3.0
+
+# ONNX Runtime with OpenVINO support
+onnxruntime-openvino>=1.16.0
+
+# OpenVINO for inference optimization
+openvino>=2023.0.0
+onnx>=1.14.0
+onnxscript>=0.1.0
+
+# Intel Extension for PyTorch (for Intel ARC GPU support)
+# These packages require special installation from Intel's index:
+# pip install intel-extension-for-pytorch[xpu] --extra-index-url https://developer.intel.com/ipex-whl-stable-xpu
+# intel-extension-for-pytorch[xpu]>=2.1.0
+# oneccl_bind_pt
+
+# PyTorch packages - Install manually with:
+# For CUDA 13.0: pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
+# For CPU/Intel GPU: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# torch>=2.0.0
+# torchvision>=0.15.0  
+# torchaudio>=2.0.0
+
+# Optional but recommended for better performance
+# matplotlib>=3.5.0  # for visualization
+# tqdm>=4.64.0       # for progress bars
+# tensorboard>=2.9.0 # for logging and monitoring
