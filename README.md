@@ -19,18 +19,6 @@ A deep learning project for classifying train gate states (open/closed) using co
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 
-## 🔄 Project Renaming
-
-**Note**: This project has been renamed from **TrainGateModel** to **VisionGate**. To complete the transition:
-
-1. Close VS Code
-2. Rename the folder: `c:\Working\source\TrainGateModel` → `c:\Working\source\VisionGate`
-3. Reopen the project in VS Code
-
----
-
----
-
 ## 🎯 Project Overview
 
 This system classifies gate images as either **"open"** or **"closed"** using a fine-tuned MobileNetV3-Large model. The project supports multiple deployment scenarios:
