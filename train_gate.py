@@ -7,10 +7,14 @@ from torchvision import datasets, models, transforms
 def main():
     # === Configuration ===
     data_dir = "dataset"   # root folder with train/ and val/
-    batch_size = 32  # Increased batch size for MobileNetV3 (more efficient)
-    num_epochs = 40  # More epochs for MobileNet training
-    learning_rate = 0.001  # Standard learning rate for MobileNet
+    batch_size = 32  # Good for 7,000 images
+    num_epochs = 50  # Sufficient for larger dataset
+    learning_rate = 0.0001  # Perfect for MobileNet
+    weight_decay = 1e-4    # Good regularization
     num_classes = 2  # open, closed
+    
+    # Add early stopping
+    patience = 5
     
     # Enhanced CUDA setup
     if torch.cuda.is_available():
@@ -31,6 +35,17 @@ def main():
     data_transforms = {
         "train": transforms.Compose([
             transforms.Resize((64, 64)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=10),     # Increase rotation for more variety
+            transforms.ColorJitter(
+                brightness=0.4,    # Increase for more lighting variations
+                contrast=0.4,      # Increase for weather conditions
+                saturation=0.3,    # Increase for seasonal changes
+                hue=0.15          # Increase color shifts
+            ),
+            transforms.RandomGrayscale(p=0.15),       # Increase poor lighting simulation
+            transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.8)),  # More motion blur
+            transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p=0.3),  # Add translation
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406],
                                  [0.229, 0.224, 0.225])
@@ -78,10 +93,13 @@ def main():
     print(f"Trainable parameters: {trainable_params:,}")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     # === Training loop ===
     best_acc = 0.0
+    best_epoch = 0
+    epochs_without_improvement = 0
+    
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch+1}/{num_epochs}")
         print("-" * 40)
@@ -123,16 +141,37 @@ def main():
             epoch_acc = running_corrects.double() / len(image_datasets[phase])
             print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
             
-            # Save best model
-            if phase == "val" and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                torch.save(model.state_dict(), "models/gate_mobilenetv3_best.pth")
-                print(f"New best validation accuracy: {best_acc:.4f}")
+            # Early stopping logic
+            if phase == "val":
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    best_epoch = epoch
+                    epochs_without_improvement = 0
+                    torch.save(model.state_dict(), "models/gate_mobilenetv3_best.pth")
+                    print(f"✅ New best validation accuracy: {best_acc:.4f}")
+                else:
+                    epochs_without_improvement += 1
+                    print(f"⏳ No improvement for {epochs_without_improvement}/{patience} epochs")
+                    
+                # Check if we should stop early
+                if epochs_without_improvement >= patience:
+                    print(f"🛑 Early stopping triggered after {patience} epochs without improvement")
+                    print(f"Best validation accuracy: {best_acc:.4f} at epoch {best_epoch + 1}")
+                    break
+        
+        # Break outer loop if early stopping triggered
+        if epochs_without_improvement >= patience:
+            break
         
         # GPU memory info
         if torch.cuda.is_available():
             memory_used = torch.cuda.max_memory_allocated() / 1024**3
             print(f"Max GPU memory used: {memory_used:.2f} GB")
+
+    # === Final results ===
+    print(f"\n🎯 Training completed!")
+    print(f"Best validation accuracy: {best_acc:.4f} achieved at epoch {best_epoch + 1}")
+    print(f"Total epochs trained: {epoch + 1}")
 
     # === Save model ===
     torch.save(model.state_dict(), "models/gate_mobilenetv3.pth")

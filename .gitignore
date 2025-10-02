@@ -1,9 +1,8 @@
-dataset/train/closed/*
-dataset/train/open/*
-dataset/val/closed/*
-dataset/val/open/*
+dataset/*
+dataset_backup/*
 
 # Trained models - large files and potentially proprietary
+models/*
 models/*.pth
 models/*.onnx
 models/*.data
@@ -67,3 +66,4 @@ wandb/
 test_images/
 sample_images/
 temp/
+tests/*.txt
