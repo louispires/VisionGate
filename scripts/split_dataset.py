@@ -3,7 +3,7 @@ import shutil
 import random
 from collections import defaultdict
 
-def split_dataset(source_dir="../dataset", train_ratio=0.7, val_ratio=0.15, test_ratio=0.15, seed=42):
+def split_dataset(source_dir="dataset", train_ratio=0.7, val_ratio=0.15, test_ratio=0.15, seed=42):
     """
     Split dataset into train/val/test splits
     """

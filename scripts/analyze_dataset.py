@@ -10,7 +10,7 @@ def analyze_dataset():
     for split in ['train', 'val']:
         print(f"\n{split.upper()} SET:")
         for class_name in ['closed', 'open']:
-            path = f"../dataset/{split}/{class_name}"  # Go up one level
+            path = f"dataset/{split}/{class_name}"  # Go up one level
             if os.path.exists(path):
                 count = len([f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
                 dataset_stats[f"{split}_{class_name}"] = count

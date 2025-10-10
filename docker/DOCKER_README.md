@@ -7,7 +7,7 @@ A MobileNetV3-based gate classification service containerized with Docker and GP
 ### Prerequisites
 - Docker installed
 - NVIDIA Docker runtime (for GPU support)
-- Trained model file (`gate_resnet101.pth`)
+- Trained model file (`gate_mobilenetv3.pth`)
 
 ### Build and Run
 
@@ -61,8 +61,8 @@ with open("gate_image.jpg", "rb") as f:
 - `CUDA_VISIBLE_DEVICES`: GPU device selection (default: 0)
 
 ### Model Files Required
-- `gate_resnet101.pth` (required)
-- `gate_resnet101_best.pth` (optional, preferred if available)
+- `gate_mobilenetv3.pth` (required)
+- `gate_mobilenetv3_best.pth` (optional, preferred if available)
 
 ## 📊 Container Specs
 - **Base Image**: nvidia/cuda:12.1-runtime-ubuntu20.04

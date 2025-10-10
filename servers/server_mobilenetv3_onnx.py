@@ -17,7 +17,6 @@ except ImportError:
 MODEL_PATH = os.getenv("ONNX_MODEL", "models/gate_mobilenetv3.onnx")
 INPUT_SIZE = (64, 64)
 CLASS_NAMES = ["closed", "open"]
-CROP_BOX = (1280, 300, 1365, 800)
 
 # Session options
 so = ort.SessionOptions()
