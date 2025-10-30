@@ -1,13 +1,13 @@
 # Quick PowerShell curl commands for Gate Classifier API
 
 # 1. Health Check
-Invoke-RestMethod -Uri "http://10.10.10.72:8000/health" -Method Get | ConvertTo-Json -Depth 3
+Invoke-RestMethod -Uri "http://localhost:8000/health" -Method Get | ConvertTo-Json -Depth 3
 
 # 2. API Information
-Invoke-RestMethod -Uri "http://10.10.10.72:8000/" -Method Get | ConvertTo-Json -Depth 3
+Invoke-RestMethod -Uri "http://localhost:8000/" -Method Get | ConvertTo-Json -Depth 3
 
 # 3. Classify an image (replace 'path\to\your\image.jpg' with actual image path)
-$imagePath = "C:\Working\source\TrainGateModel\dataset\val\open\wishbone_gate_train_open_0928231929.jpg"
+$imagePath = "dataset\val\open\wishbone_gate_train_open_0928231401.jpg"
 if (Test-Path $imagePath) {
     # Method 1: Using Add-Type and proper multipart handling
     try {

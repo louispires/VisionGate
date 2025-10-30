@@ -37,9 +37,8 @@ RUN pip install --no-cache-dir onnxruntime-openvino fastapi uvicorn Pillow numpy
 # Copy model & server (as root to ensure proper ownership)
 USER root
 RUN mkdir -p /app/models
-COPY ../models/gate_mobilenetv3.onnx ./models/
-COPY ../models/gate_mobilenetv3.onnx.data ./models/
-COPY ../servers/server_mobilenetv3_onnx.py ./
+COPY models/gate_mobilenetv3.onnx ./models/
+COPY servers/server_mobilenetv3_onnx.py ./
 RUN chown -R openvino:openvino /app
 
 # Switch back to openvino user for runtime

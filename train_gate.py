@@ -15,12 +15,16 @@ def main():
     data_dir = "dataset"   # root folder with train/ and val/
     batch_size = 32  # Good for 7,000 images
     num_epochs = 50  # Sufficient for larger dataset
-    learning_rate = 0.0001  # Perfect for MobileNet
+    learning_rate = 0.00005  # Reduced learning rate for better convergence
     weight_decay = 1e-4    # Good regularization
     num_classes = 2  # open, closed
     
-    # Add early stopping
-    patience = 5
+    # Add early stopping with more patience
+    patience = 10  # Increased from 5 to allow more exploration
+    
+    # Set number of CPU threads for CPU operations (AMD Ryzen 9 9950X3D has 16 cores / 32 threads)
+    torch.set_num_threads(16)
+    print(f"PyTorch CPU threads: {torch.get_num_threads()}")
     
     # DirectML setup for AMD Radeon RX 9070 XT
     device = torch_directml.device()
@@ -76,11 +80,11 @@ def main():
     # === Model ===
     # Using MobileNetV3 Large for efficient inference and better aspect ratio handling
     model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.IMAGENET1K_V2)
-    # Replace final classifier for 2-class classification
+    # Replace final classifier for 2-class classification with increased dropout
     model.classifier = nn.Sequential(
         nn.Linear(960, 1280),
         nn.Hardswish(),
-        nn.Dropout(0.2),
+        nn.Dropout(0.3),  # Increased from 0.2 to prevent overfitting
         nn.Linear(1280, num_classes)
     )
     model = model.to(device)
@@ -93,6 +97,11 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    
+    # Add learning rate scheduler for gradual decay
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5, patience=3
+    )
 
     # === Training loop ===
     best_acc = 0.0
@@ -163,6 +172,11 @@ def main():
                 else:
                     epochs_without_improvement += 1
                     print(f"⏳ No improvement for {epochs_without_improvement}/{patience} epochs")
+                
+                # Update learning rate scheduler
+                scheduler.step(epoch_acc)
+                current_lr = optimizer.param_groups[0]['lr']
+                print(f"📊 Current learning rate: {current_lr:.6f}")
                     
                 # Check if we should stop early
                 if epochs_without_improvement >= patience:
