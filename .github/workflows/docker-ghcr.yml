@@ -1,0 +1,31 @@
+name: Build and Publish Docker image to GHCR
+
+on:
+  push:
+    branches:
+      - directml-amd-gpu
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -f docker/Dockerfile.onnx.intel -t ghcr.io/${{ github.repository_owner }}/visiongate-onnx:latest .
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/visiongate-onnx:latest
