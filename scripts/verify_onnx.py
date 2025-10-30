@@ -6,8 +6,8 @@ import onnx
 import onnxruntime as ort
 import numpy as np
 
-MODEL = os.getenv("ONNX_MODEL", "gate_resnet101.onnx")
-EXPECTED_INPUT_SHAPE = (1, 3, 384, 384)
+MODEL = os.getenv("ONNX_MODEL", "models/gate_mobilenetv3.onnx")
+EXPECTED_INPUT_SHAPE = (1, 3, 64, 64)  # Updated for 64x64 input
 CLASS_COUNT = 2
 
 print(f"== ONNX Model Verification ==")
@@ -78,10 +78,13 @@ shape = [d if isinstance(d, int) else 1 for d in inp.shape]
 if len(shape) != 4:
     print("[WARN] Unexpected input rank, expected 4")
 
-# Ensure correct size for 384 variant
+# Ensure correct size for 64x64 variant
 if shape[2] in (224, '224') or shape[3] in (224, '224'):
     print('[INFO] Model appears 224-sized, adjusting test tensor to 224x224')
     test_h, test_w = 224, 224
+elif shape[2] in (64, '64') or shape[3] in (64, '64'):
+    print('[INFO] Model appears 64-sized, adjusting test tensor to 64x64')
+    test_h, test_w = 64, 64
 else:
     test_h, test_w = 384, 384
 

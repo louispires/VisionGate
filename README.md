@@ -133,22 +133,30 @@ python servers/server_mobilenetv3_onnx.py
 ## 📦 Installation
 
 ### Prerequisites
-- **Python 3.11+**
-- **CUDA 13.0+** (for GPU acceleration)
-- **Intel Extension for PyTorch** (for Intel ARC GPU)
+- **Python 3.13+** (fully supported)
+- **AMD Ryzen 9 9950X3D** (or any modern CPU)
 - **Docker** (for containerized deployment)
 
 ### Core Dependencies
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+# PyTorch with CPU support (optimized for AMD Ryzen)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Server and inference dependencies
 pip install fastapi uvicorn pillow numpy python-multipart setproctitle
-pip install onnxruntime-openvino  # For ONNX inference
+
+# ONNX Runtime with OpenVINO for inference optimization
+pip install onnxruntime-openvino openvino onnx onnxscript
 ```
 
-### Intel GPU Support
+### Full Installation
 ```bash
-# Install Intel Extension for PyTorch
-pip install intel-extension-for-pytorch==2.8.10+xpu --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+# Create virtual environment with Python 3.13
+py -3.13 -m venv .venv
+.venv\Scripts\activate
+
+# Install all dependencies
+pip install -r requirements.txt
 ```
 
 ## 🎓 Training

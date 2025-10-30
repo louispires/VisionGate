@@ -1,34 +1,37 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from PIL import Image
 from torchvision import datasets, models, transforms
+import torch_directml
+import warnings
+import time
+
+# Suppress DirectML CPU fallback warning for Adam optimizer's lerp operation
+# Note: This is a known DirectML limitation - lerp falls back to CPU but overall training still benefits from GPU
+warnings.filterwarnings('ignore', message='.*aten::lerp.*')
 
 def main():
     # === Configuration ===
     data_dir = "dataset"   # root folder with train/ and val/
     batch_size = 32  # Good for 7,000 images
     num_epochs = 50  # Sufficient for larger dataset
-    learning_rate = 0.0001  # Perfect for MobileNet
+    learning_rate = 0.00005  # Reduced learning rate for better convergence
     weight_decay = 1e-4    # Good regularization
     num_classes = 2  # open, closed
     
-    # Add early stopping
-    patience = 5
+    # Add early stopping with more patience
+    patience = 10  # Increased from 5 to allow more exploration
     
-    # Enhanced CUDA setup
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        print(f"✅ CUDA available! Using GPU: {torch.cuda.get_device_name(0)}")
-        print(f"CUDA version: {torch.version.cuda}")
-        print(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
-        # Enable optimizations
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cudnn.deterministic = False
-    else:
-        device = torch.device("cpu")
-        print("⚠️ CUDA not available. Using CPU (training will be much slower)")
-        batch_size = 4  # Smaller batch size for MobileNet
+    # Set number of CPU threads for CPU operations (AMD Ryzen 9 9950X3D has 16 cores / 32 threads)
+    torch.set_num_threads(16)
+    print(f"PyTorch CPU threads: {torch.get_num_threads()}")
+    
+    # DirectML setup for AMD Radeon RX 9070 XT
+    device = torch_directml.device()
+    print(f"✅ Using DirectML GPU: {torch_directml.device_name(0)}")
+    print("Python version: 3.11.9")
+    print(f"PyTorch version: {torch.__version__}")
+
 
     # === Data transforms ===
     # Using 64x64 resolution to match server preprocessing (square resize!)
@@ -77,11 +80,11 @@ def main():
     # === Model ===
     # Using MobileNetV3 Large for efficient inference and better aspect ratio handling
     model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.IMAGENET1K_V2)
-    # Replace final classifier for 2-class classification
+    # Replace final classifier for 2-class classification with increased dropout
     model.classifier = nn.Sequential(
         nn.Linear(960, 1280),
         nn.Hardswish(),
-        nn.Dropout(0.2),
+        nn.Dropout(0.3),  # Increased from 0.2 to prevent overfitting
         nn.Linear(1280, num_classes)
     )
     model = model.to(device)
@@ -94,6 +97,11 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    
+    # Add learning rate scheduler for gradual decay
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5, patience=3
+    )
 
     # === Training loop ===
     best_acc = 0.0
@@ -111,9 +119,9 @@ def main():
                 model.eval()
             running_loss, running_corrects = 0.0, 0
             
-            # Clear GPU cache at start of each phase
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            # Track time for speed calculation
+            phase_start_time = time.time()
+            batch_start_time = time.time()
 
             for batch_idx, (inputs, labels) in enumerate(dataloaders[phase]):
                 inputs, labels = inputs.to(device, non_blocking=True), labels.to(device, non_blocking=True)
@@ -131,15 +139,27 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
                 
-                # Print progress every 10 batches
+                # Print progress every 10 batches with speed indicator
                 if batch_idx % 10 == 0:
                     current = batch_idx * len(inputs)
                     total = len(image_datasets[phase])
-                    print(f"{phase} [{current:>5}/{total:>5}] Loss: {loss.item():.4f}")
+                    
+                    # Calculate images per second
+                    elapsed = time.time() - batch_start_time
+                    if elapsed > 0:
+                        images_per_sec = (len(inputs) * 10) / elapsed if batch_idx > 0 else 0
+                        print(f"{phase} [{current:>5}/{total:>5}] Loss: {loss.item():.4f} | Speed: {images_per_sec:.1f} img/s")
+                    else:
+                        print(f"{phase} [{current:>5}/{total:>5}] Loss: {loss.item():.4f}")
+                    
+                    batch_start_time = time.time()
 
+            # Calculate phase statistics
+            phase_time = time.time() - phase_start_time
             epoch_loss = running_loss / len(image_datasets[phase])
-            epoch_acc = running_corrects.double() / len(image_datasets[phase])
-            print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
+            epoch_acc = float(running_corrects) / len(image_datasets[phase])
+            avg_speed = len(image_datasets[phase]) / phase_time
+            print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f} | Avg Speed: {avg_speed:.1f} img/s | Time: {phase_time:.1f}s")
             
             # Early stopping logic
             if phase == "val":
@@ -152,6 +172,11 @@ def main():
                 else:
                     epochs_without_improvement += 1
                     print(f"⏳ No improvement for {epochs_without_improvement}/{patience} epochs")
+                
+                # Update learning rate scheduler
+                scheduler.step(epoch_acc)
+                current_lr = optimizer.param_groups[0]['lr']
+                print(f"📊 Current learning rate: {current_lr:.6f}")
                     
                 # Check if we should stop early
                 if epochs_without_improvement >= patience:
@@ -162,14 +187,9 @@ def main():
         # Break outer loop if early stopping triggered
         if epochs_without_improvement >= patience:
             break
-        
-        # GPU memory info
-        if torch.cuda.is_available():
-            memory_used = torch.cuda.max_memory_allocated() / 1024**3
-            print(f"Max GPU memory used: {memory_used:.2f} GB")
 
     # === Final results ===
-    print(f"\n🎯 Training completed!")
+    print("\n🎯 Training completed!")
     print(f"Best validation accuracy: {best_acc:.4f} achieved at epoch {best_epoch + 1}")
     print(f"Total epochs trained: {epoch + 1}")
 
@@ -181,7 +201,7 @@ def main():
     model.eval()  # Set to evaluation mode for export
     dummy_input = torch.randn(1, 3, 64, 64, device=device)  # Updated for 64x64 input
     try:
-        torch.onnx.export(model, dummy_input,
+        torch.onnx.export(model, (dummy_input,),
                           "models/gate_mobilenetv3.onnx",
                           input_names=["input"],
                           output_names=["output"],

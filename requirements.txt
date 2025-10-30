@@ -1,7 +1,7 @@
 # Core dependencies for image processing and data handling
-Pillow>=9.0.0
-numpy>=1.21.0
-opencv-python>=4.8.0
+Pillow>=12.0.0
+numpy>=2.2.0,<2.3.0  # OpenCV and OpenVINO require <2.3.0
+opencv-python>=4.12.0
 
 # FastAPI server dependencies
 fastapi>=0.100.0
@@ -19,18 +19,12 @@ openvino>=2023.0.0
 onnx>=1.14.0
 onnxscript>=0.1.0
 
-# Intel Extension for PyTorch (for Intel ARC GPU support)
-# These packages require special installation from Intel's index:
-# pip install intel-extension-for-pytorch[xpu] --extra-index-url https://developer.intel.com/ipex-whl-stable-xpu
-# intel-extension-for-pytorch[xpu]>=2.1.0
-# oneccl_bind_pt
-
-# PyTorch packages - Install manually with:
-# For CUDA 13.0: pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
-# For CPU/Intel GPU: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-# torch>=2.0.0
-# torchvision>=0.15.0  
-# torchaudio>=2.0.0
+# PyTorch packages with DirectML for AMD GPU (Windows)
+# Install with: pip install torch-directml
+# Note: Python 3.11 required (DirectML doesn't support 3.12+ yet)
+torch==2.4.1
+torchvision==0.19.1
+torch-directml>=0.2.5
 
 # Optional but recommended for better performance
 # matplotlib>=3.5.0  # for visualization

@@ -16,12 +16,12 @@ def test_with_training_images():
     model.classifier = nn.Sequential(
         nn.Linear(960, 1280),
         nn.Hardswish(),
-        nn.Dropout(0.2),
+        nn.Dropout(0.3),  # Updated to match training config
         nn.Linear(1280, 2)
     )
     
     # Load best model
-    model.load_state_dict(torch.load("gate_mobilenetv3_best.pth", map_location=device))
+    model.load_state_dict(torch.load("models/gate_mobilenetv3_best.pth", map_location=device, weights_only=False))
     model = model.to(device)
     model.eval()
     
