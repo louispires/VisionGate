@@ -26,7 +26,7 @@ so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
 # Attempt to load with OpenVINO or DML / CPU fallback
 preferred_eps = [
-    ("OpenVINOExecutionProvider", {"device_type": "GPU_FP32"}),
+    ("OpenVINOExecutionProvider", {"device_type": "GPU"}),
     ("DmlExecutionProvider", {}),  # Windows DirectML fallback
     ("CUDAExecutionProvider", {}),
     ("CPUExecutionProvider", {})
