@@ -47,11 +47,6 @@ USER openvino
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import urllib.request,sys,json;\
-url='http://localhost:8000/health';\
-try:\
-  with urllib.request.urlopen(url,timeout=4) as r: d=json.loads(r.read().decode());\
-  sys.exit(0 if d.get('status')=='healthy' else 1)\
-except Exception: sys.exit(1)"
+  CMD python -c "import json,sys,urllib.request; d=json.loads(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).read().decode()); sys.exit(0 if d.get('status') == 'healthy' else 1)"
 
 CMD ["python", "server_mobilenetv3_onnx.py"]
