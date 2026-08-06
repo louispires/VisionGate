@@ -69,6 +69,7 @@ switch ($Action.ToLower()) {
         Remove-Item "gate_mobilenetv3.onnx" -ErrorAction SilentlyContinue
         Remove-Item "gate_mobilenetv3.onnx.data" -ErrorAction SilentlyContinue
         Remove-Item "server_mobilenetv3_onnx.py" -ErrorAction SilentlyContinue
+        break
     }
     
     "run" {
@@ -103,6 +104,7 @@ switch ($Action.ToLower()) {
             Write-Host "❌ Failed to start container" -ForegroundColor Red
             exit 1
         }
+        break
     }
     
     "push" {
@@ -116,6 +118,7 @@ switch ($Action.ToLower()) {
             Write-Host "❌ Push failed" -ForegroundColor Red
             exit 1
         }
+        break
     }
     
     "all" {
@@ -135,6 +138,7 @@ switch ($Action.ToLower()) {
         }
         
         Write-Host "🎉 Deployment complete!" -ForegroundColor Green
+        break
     }
     
     "test" {
@@ -157,16 +161,16 @@ switch ($Action.ToLower()) {
         # Run comprehensive tests
         Write-Host "🧪 Running comprehensive tests..." -ForegroundColor Yellow
         & ./tests/test_api.ps1
+        break
     }
     
     default {
         Write-Host "❌ Unknown action: $Action" -ForegroundColor Red
         Write-Host "Valid actions: build, run, push, all, test" -ForegroundColor Yellow
         exit 1
+        break
     }
-}
-
-if ($Push -and $Action -eq "build") {
+}if ($Push -and $Action -eq "build") {
     Write-Host "📤 Pushing to registry..." -ForegroundColor Yellow
     & $PSCommandPath -Action "push" -Tag $Tag -Registry $Registry
 }

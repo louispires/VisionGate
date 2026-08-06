@@ -15,7 +15,7 @@ from threading import Lock
 # MODIFY THESE VARIABLES:
 # ========================================
 DEPLOYED_URL = "http://10.10.10.72:8000/classify"  # Your deployed model URL
-SOURCE_FOLDER = r"C:\Working\source\VisionGate\dataset_backup\train"        # Base folder containing closed/open subfolders
+SOURCE_FOLDER = r"C:\Working\source\VisionGate\dataset\test"        # Base folder containing closed/open subfolders
 MAX_IMAGES = 5000  # Test 5000 images for comprehensive testing
 MAX_WORKERS = 20   # Number of concurrent threads (adjust based on server capacity)
 

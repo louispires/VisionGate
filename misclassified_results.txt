@@ -1,0 +1,11 @@
+Misclassified files from C:\Working\source\VisionGate\dataset\test
+Generated on: 2025-10-30 13:46:03
+Misclassified files: 2
+============================================================
+
+ 1. wishbone_gate_train_open_1016094647.jpg (expected: open, got: closed, confidence: 0.543)
+    Full path: C:\Working\source\VisionGate\dataset\test\open\wishbone_gate_train_open_1016094647.jpg
+
+ 2. wishbone_gate_train_open_1014195535.jpg (expected: open, got: closed, confidence: 1.000)
+    Full path: C:\Working\source\VisionGate\dataset\test\open\wishbone_gate_train_open_1014195535.jpg
+
